@@ -4,7 +4,7 @@ Planning on expanding it for other tooling useful for net admins
 
 
 ## Example iptable_manager.py
-### IPtableManager
+### IPtablesManager
 #### Start the application
 ![image](https://github.com/user-attachments/assets/060c405b-ad93-483b-9582-b64c167b0f8f)
 
