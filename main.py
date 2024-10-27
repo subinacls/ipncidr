@@ -32,7 +32,8 @@ def main():
             # List available modules and allow exploration
             if 'module' in loader.modules_dict['app'] and loader.modules_dict['app']['module']:
                 print("\n=== Available Modules ===")
-                module_keys = list(loader.modules_dict['app']['module'].keys())
+                # Sort module keys alphabetically
+                module_keys = sorted(loader.modules_dict['app']['module'].keys())
                 for idx, module_name in enumerate(module_keys, 1):
                     print(f"{idx}. {module_name}")
                 print("\n=======================================")
@@ -108,18 +109,21 @@ def main():
                 print("Invalid selection. Please select a valid class number.")
                 continue
 
-            # Retrieve or set initial settings for the module from shared
-            default_settings = {
-                'ca_cert': '/path/to/ca_cert.pem',  # Example default setting for demonstration
-                'other_setting': 'default_value'
+            # Dynamically build settings based on the class __init__ parameters
+            init_sig = inspect.signature(class_ref.__init__)
+            init_settings = {
+                param.name: f"default_{param.name}" if param.default == param.empty else param.default
+                for param in init_sig.parameters.values()
+                if param.name != "self"
             }
-            settings = shared.add_module_settings(selected_class, default_settings)
 
-            # Collect arguments for initialization based on __init__ signature
+            # Add or retrieve module settings in shared config
+            settings = shared.add_module_settings(selected_class, init_settings)
+
+            # Collect arguments for initialization using these settings
             args = []
             kwargs = {}
             print(f"\nInitializing class '{selected_class}' with settings: {settings}")
-            init_sig = inspect.signature(class_ref.__init__)
             for param in init_sig.parameters.values():
                 if param.name == "self":
                     continue
