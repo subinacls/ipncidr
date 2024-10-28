@@ -3,8 +3,8 @@
 import os
 import logging
 import inspect
-from module_loader import ModuleLoader
-import shared
+from core.module_loader import ModuleLoader
+from core.shared import shared as shared
 
 # Configure logging
 logging.basicConfig(filename='logs/app.log', level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
