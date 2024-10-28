@@ -4,7 +4,7 @@ import os
 import logging
 import inspect
 from core.module_loader import ModuleLoader
-from core.shared import shared as shared
+from core import shared as shared
 
 # Configure logging
 logging.basicConfig(filename='logs/app.log', level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')

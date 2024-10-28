@@ -21,7 +21,7 @@ class CertificateManager:
     SHARED_MEM_SIZE = 1024  # Define a fixed size for shared memory
     REQUIRED_VARS = ["common_name", "country_name", "validity_days"]
 
-    def __init__(self, project_dir: str = "./ipncidr", shared_mem_file: str = "/dev/shm/cert_manager_shared"):
+    def __init__(self, project_dir: str = "./IPnCIDR_Certs", shared_mem_file: str = "/dev/shm/cert_manager_shared"):
         """
         Initializes the CertificateManager with paths for the project directory and shared memory file.
         Creates the project directory if it does not exist.
