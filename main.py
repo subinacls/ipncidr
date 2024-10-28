@@ -37,11 +37,9 @@ def display_argument_table(method_sig, user_args):
         if param.name == 'self':
             continue
         arg_type = "Mandatory" if param.default == param.empty else "Optional"
-        # Use user-provided value if available, else default value or "N/A"
         current_value = user_args.get(param.name, param.default if param.default != param.empty else "N/A")
         args_table.append((idx, param.name, arg_type, current_value))
-    
-    # Display table
+
     print("\nArgument Table:")
     print("{:<4} {:<15} {:<10} {:<20}".format("No.", "Argument", "Type", "Current Value"))
     print("-" * 50)
@@ -59,7 +57,6 @@ def main():
         choice = input("Enter your choice: ")
 
         if choice == "1":
-            # List available modules and their instantiated classes
             print("\n=== Available Modules and Initialized Classes ===")
             for module_key, module_content in loader.modules_dict['app']['module'].items():
                 print(f"\nModule: {module_key}")
@@ -69,8 +66,7 @@ def main():
             print("\n=======================================")
 
         elif choice == "2":
-            # Run a function in an initialized module, with persistent session until exit
-            return_to_main = False  # Flag to break out of nested loops if returning to main menu
+            return_to_main = False
             while not return_to_main:
                 print("\n=== Initialized Classes ===")
                 module_class_pairs = []
@@ -79,32 +75,30 @@ def main():
                         if 'instance' in class_info:
                             display_text = f"{module_key} - {class_name}"
                             module_class_pairs.append((display_text, class_info['instance']))
-                
-                # Display numbered list of module-class pairs
+
                 for idx, (display_text, _) in enumerate(module_class_pairs, 1):
                     print(f"{idx}. {display_text}")
-                
-                try:
-                    module_choice = input("\nSelect a module by number or enter '88' to go back, '99' for main menu, '00' to exit: ")
-                    nav_result = handle_navigation(module_choice)
-                    if nav_result == "back":
-                        break
-                    elif nav_result == "main":
-                        return_to_main = True
-                        break
 
+                module_choice = input("\nSelect a module by number or enter '88' to go back, '99' for main menu, '00' to exit: ")
+                nav_result = handle_navigation(module_choice)
+                if nav_result == "back":
+                    break
+                elif nav_result == "main":
+                    return_to_main = True
+                    break
+
+                try:
                     module_choice = int(module_choice) - 1
                     selected_instance = module_class_pairs[module_choice][1]
                 except (ValueError, IndexError):
                     print("Invalid selection. Please select a valid module and class number.")
                     continue
 
-                # List methods in the selected class
                 while not return_to_main:
                     methods = [m for m in dir(selected_instance) if not m.startswith('_') and callable(getattr(selected_instance, m))]
                     for idx, method_name in enumerate(methods, 1):
                         print(f"{idx}. {method_name}")
-                    
+
                     method_choice = input("\nSelect a method by number to execute or enter '88' to go back, '99' for main menu, '00' to exit: ")
                     nav_result = handle_navigation(method_choice)
                     if nav_result == "back":
@@ -118,26 +112,21 @@ def main():
                         selected_method = methods[method_choice]
                         method_to_call = getattr(selected_instance, selected_method)
 
-                        # Check if the method has arguments other than 'self'
                         method_sig = inspect.signature(method_to_call)
                         user_args = {}
-                        has_args = any(
-                            param.name != 'self' for param in method_sig.parameters.values()
-                        )
+                        has_args = any(param.name != 'self' for param in method_sig.parameters.values())
 
-                        # Proceed directly if there are no arguments
                         if not has_args:
                             print(f"\nExecuting '{selected_method}' with no arguments required.")
                             result = method_to_call()
                             print(f"\nResult: {result}")
                             continue
 
-                        # Display and edit argument table if there are arguments
                         while True:
-                            os.system('clear')  # Clear screen for refreshed display
+                            os.system('clear')
                             print(f"Editing arguments for method '{selected_method}':")
                             args_table = display_argument_table(method_sig, user_args)
-                            
+
                             arg_choice = input("\nSelect an argument by number to edit, or enter '99' to finish setup: ")
                             if arg_choice == "99":
                                 break
@@ -151,7 +140,6 @@ def main():
                                 print("Invalid selection. Please select a valid argument number.")
                                 continue
 
-                        # Execute method with user-provided arguments
                         try:
                             result = method_to_call(**user_args)
                             print(f"\nResult: {result}")
@@ -164,7 +152,6 @@ def main():
                         logger.error(f"Error selecting method: {e}")
 
         elif choice == "3":
-            # Help menu for modules
             print("\n=== Help Documentation ===")
             modules = list(loader.modules_dict['app']['module'].keys())
             for idx, module_name in enumerate(modules, 1):

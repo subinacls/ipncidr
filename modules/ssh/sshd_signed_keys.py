@@ -17,7 +17,7 @@ class SSHKeyManager:
             download_dir (str): Directory where user packages are stored for download.
     """
 
-    def __init__(self, ca_key_path, download_dir="downloads"):
+    def __init__(self, ca_key_path="./IPnCIDR_CA/ca.pem", download_dir="downloads"):
         """
         Initialize the SSHKeyManager with a CA key and a download directory.
 
@@ -28,7 +28,7 @@ class SSHKeyManager:
         self.ca_key_path = ca_key_path
         self.download_dir = Path(download_dir)
         self.download_dir.mkdir(exist_ok=True)
-        self.user = user or pwd.getpwuid(os.getuid()).pw_name
+        self.user = pwd.getpwuid(os.getuid()).pw_name or "ipncidr"
         self.home_dir = pwd.getpwnam(self.user).pw_dir
         self.ssh_dir = os.path.join(self.home_dir, ".ssh")
 
