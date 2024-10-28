@@ -10,8 +10,44 @@ import shared
 logging.basicConfig(filename='logs/app.log', level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# Global dictionary to store initialized module instances
-module_instances = {}
+def main_menu():
+    print("\nPlease select an option:")
+    print("1. List available modules and explore contents")
+    print("2. Run a function in an initialized module")
+    print("3. Display help for a module or function")
+    print("4. Exit")
+
+def handle_navigation(choice):
+    """Handle navigation based on user input."""
+    if choice == "88":
+        print("Returning to the previous menu...")
+        return "back"
+    elif choice == "99":
+        print("Returning to the main menu...")
+        return "main"
+    elif choice == "00":
+        print("Exiting application.")
+        exit(0)
+    return None
+
+def display_argument_table(method_sig, user_args):
+    """Display a table of arguments for the method, marking them as Mandatory or Optional."""
+    args_table = []
+    for idx, param in enumerate(method_sig.parameters.values(), 1):
+        if param.name == 'self':
+            continue
+        arg_type = "Mandatory" if param.default == param.empty else "Optional"
+        # Use user-provided value if available, else default value or "N/A"
+        current_value = user_args.get(param.name, param.default if param.default != param.empty else "N/A")
+        args_table.append((idx, param.name, arg_type, current_value))
+    
+    # Display table
+    print("\nArgument Table:")
+    print("{:<4} {:<15} {:<10} {:<20}".format("No.", "Argument", "Type", "Current Value"))
+    print("-" * 50)
+    for idx, name, arg_type, current_value in args_table:
+        print("{:<4} {:<15} {:<10} {:<20}".format(idx, name, arg_type, str(current_value)))
+    return args_table
 
 def main():
     shared.info and logger.info("Starting Module Loader Interactive Environment")
@@ -19,191 +55,116 @@ def main():
     loader = ModuleLoader(base_path=base_path)
 
     while True:
-        print("\nPlease select an option:")
-        print("1. List available modules and explore contents")
-        print("2. Initialize a module with configurable arguments")
-        print("3. Run a function in an initialized module")
-        print("4. Display help for a module or function")
-        print("5. Exit")
-
+        main_menu()
         choice = input("Enter your choice: ")
 
         if choice == "1":
-            # List available modules and allow exploration
-            if 'module' in loader.modules_dict['app'] and loader.modules_dict['app']['module']:
-                print("\n=== Available Modules ===")
-                # Sort module keys alphabetically
-                module_keys = sorted(loader.modules_dict['app']['module'].keys())
-                for idx, module_name in enumerate(module_keys, 1):
-                    print(f"{idx}. {module_name}")
-                print("\n=======================================")
-
-                try:
-                    module_choice = int(input("\nSelect a module by number to explore: ")) - 1
-                    selected_module_key = module_keys[module_choice]
-                except (ValueError, IndexError):
-                    print("Invalid selection. Please select a valid module number.")
-                    continue
-
-                # Show classes and functions in the selected module
-                module_content = loader.modules_dict['app']['module'][selected_module_key]
-                print(f"\n=== Contents of Module: {selected_module_key} ===")
-                classes = [name for name, content in module_content.items() if 'methods' in content]
-                functions = [name for name, content in module_content.items() if 'function' in content]
-
-                if classes:
-                    print("\nClasses:")
-                    for idx, class_name in enumerate(classes, 1):
-                        print(f"{idx}. {class_name}")
-                if functions:
-                    print("\nFunctions:")
-                    for idx, function_name in enumerate(functions, 1):
-                        print(f"{idx}. {function_name}")
-
-                if classes:
-                    try:
-                        class_choice = int(input("\nSelect a class by number to view its methods (or press Enter to skip): ")) - 1
-                        selected_class_name = classes[class_choice]
-                        class_content = module_content[selected_class_name]
-                    except (ValueError, IndexError):
-                        print("No class selected. Returning to main menu.")
-                        continue
-
-                    # Display methods in the selected class
-                    methods = [name for name in class_content['methods'] if not name.startswith('_')]
-                    if methods:
-                        print(f"\nMethods in class '{selected_class_name}':")
-                        for idx, method_name in enumerate(methods, 1):
-                            print(f"  {idx}. {method_name}")
-
-                    print("\n=======================================")
-                else:
-                    print("No classes available to drill down further.")
-            else:
-                print("No modules were found or loaded. Please check the modules directory and try again.")
+            # List available modules and their instantiated classes
+            print("\n=== Available Modules and Initialized Classes ===")
+            for module_key, module_content in loader.modules_dict['app']['module'].items():
+                print(f"\nModule: {module_key}")
+                for class_name, class_info in module_content.items():
+                    if 'instance' in class_info:
+                        print(f"  Initialized Class: {class_name}")
+            print("\n=======================================")
 
         elif choice == "2":
-            # Initialize a module
-            global module_instances
-            modules = list(loader.modules_dict['app']['module'].keys())
-            for idx, module_name in enumerate(modules, 1):
-                print(f"{idx}. {module_name}")
-            try:
-                module_choice = int(input("\nSelect a module by number to initialize: ")) - 1
-                selected_module = modules[module_choice]
-            except (ValueError, IndexError):
-                print("Invalid selection. Please select a valid module number.")
-                continue
+            # Run a function in an initialized module, with persistent session until exit
+            return_to_main = False  # Flag to break out of nested loops if returning to main menu
+            while not return_to_main:
+                print("\n=== Initialized Classes ===")
+                module_class_pairs = []
+                for module_key, module_content in loader.modules_dict['app']['module'].items():
+                    for class_name, class_info in module_content.items():
+                        if 'instance' in class_info:
+                            display_text = f"{module_key} - {class_name}"
+                            module_class_pairs.append((display_text, class_info['instance']))
+                
+                # Display numbered list of module-class pairs
+                for idx, (display_text, _) in enumerate(module_class_pairs, 1):
+                    print(f"{idx}. {display_text}")
+                
+                try:
+                    module_choice = input("\nSelect a module by number or enter '88' to go back, '99' for main menu, '00' to exit: ")
+                    nav_result = handle_navigation(module_choice)
+                    if nav_result == "back":
+                        break
+                    elif nav_result == "main":
+                        return_to_main = True
+                        break
 
-            # Display classes in the selected module for initialization
-            module_content = loader.modules_dict['app']['module'][selected_module]
-            classes = [item_name for item_name, item_content in module_content.items() if 'methods' in item_content]
-            for idx, class_name in enumerate(classes, 1):
-                print(f"{idx}. {class_name}")
-            try:
-                class_choice = int(input("\nSelect a class by number to initialize: ")) - 1
-                selected_class = classes[class_choice]
-                class_content = module_content[selected_class]
-                class_ref = class_content['class_ref']
-            except (ValueError, IndexError):
-                print("Invalid selection. Please select a valid class number.")
-                continue
-
-            # Dynamically build settings based on the class __init__ parameters
-            init_sig = inspect.signature(class_ref.__init__)
-            init_settings = {
-                param.name: f"default_{param.name}" if param.default == param.empty else param.default
-                for param in init_sig.parameters.values()
-                if param.name != "self"
-            }
-
-            # Add or retrieve module settings in shared config
-            settings = shared.add_module_settings(selected_class, init_settings)
-
-            # Collect arguments for initialization using these settings
-            args = []
-            kwargs = {}
-            print(f"\nInitializing class '{selected_class}' with settings: {settings}")
-            for param in init_sig.parameters.values():
-                if param.name == "self":
+                    module_choice = int(module_choice) - 1
+                    selected_instance = module_class_pairs[module_choice][1]
+                except (ValueError, IndexError):
+                    print("Invalid selection. Please select a valid module and class number.")
                     continue
-                if param.default == param.empty:
-                    args.append(input(f"Enter value for '{param.name}' (required): "))
-                else:
-                    default_val = settings.get(param.name, param.default)
-                    user_input = input(f"Enter value for '{param.name}' (default={default_val}): ") or default_val
-                    kwargs[param.name] = user_input
 
-            # Instantiate the class with the provided arguments
-            try:
-                instance = class_ref(*args, **kwargs)
-                module_instances[selected_class] = instance
-                print(f"'{selected_class}' has been initialized successfully and stored for future use.")
-                logger.debug(f"Instance of {selected_class} stored with args: {args}, kwargs: {kwargs}")
-            except Exception as e:
-                print(f"Error initializing the class: {e}")
-                logger.error(f"Error initializing {selected_class} with args {args} and kwargs {kwargs}: {e}")
+                # List methods in the selected class
+                while not return_to_main:
+                    methods = [m for m in dir(selected_instance) if not m.startswith('_') and callable(getattr(selected_instance, m))]
+                    for idx, method_name in enumerate(methods, 1):
+                        print(f"{idx}. {method_name}")
+                    
+                    method_choice = input("\nSelect a method by number to execute or enter '88' to go back, '99' for main menu, '00' to exit: ")
+                    nav_result = handle_navigation(method_choice)
+                    if nav_result == "back":
+                        break
+                    elif nav_result == "main":
+                        return_to_main = True
+                        break
+
+                    try:
+                        method_choice = int(method_choice) - 1
+                        selected_method = methods[method_choice]
+                        method_to_call = getattr(selected_instance, selected_method)
+
+                        # Check if the method has arguments other than 'self'
+                        method_sig = inspect.signature(method_to_call)
+                        user_args = {}
+                        has_args = any(
+                            param.name != 'self' for param in method_sig.parameters.values()
+                        )
+
+                        # Proceed directly if there are no arguments
+                        if not has_args:
+                            print(f"\nExecuting '{selected_method}' with no arguments required.")
+                            result = method_to_call()
+                            print(f"\nResult: {result}")
+                            continue
+
+                        # Display and edit argument table if there are arguments
+                        while True:
+                            os.system('clear')  # Clear screen for refreshed display
+                            print(f"Editing arguments for method '{selected_method}':")
+                            args_table = display_argument_table(method_sig, user_args)
+                            
+                            arg_choice = input("\nSelect an argument by number to edit, or enter '99' to finish setup: ")
+                            if arg_choice == "99":
+                                break
+
+                            try:
+                                arg_idx = int(arg_choice) - 1
+                                arg_name = args_table[arg_idx][1]
+                                new_value = input(f"Enter value for '{arg_name}': ")
+                                user_args[arg_name] = new_value
+                            except (ValueError, IndexError):
+                                print("Invalid selection. Please select a valid argument number.")
+                                continue
+
+                        # Execute method with user-provided arguments
+                        try:
+                            result = method_to_call(**user_args)
+                            print(f"\nResult: {result}")
+                        except Exception as e:
+                            print(f"Error executing method {selected_method}: {e}")
+                            logger.error(f"Failed to execute method {selected_method} with arguments {user_args}: {e}")
+
+                    except (ValueError, IndexError, AttributeError) as e:
+                        print(f"Error selecting method: {e}")
+                        logger.error(f"Error selecting method: {e}")
 
         elif choice == "3":
-            # Run a function in an initialized module
-            if not module_instances:
-                print("No modules have been initialized yet. Please initialize a module first.")
-                logger.debug("No initialized modules found.")
-                continue
-
-            # List initialized classes for method execution
-            print("\n=== Initialized Modules ===")
-            for idx, class_name in enumerate(module_instances.keys(), 1):
-                print(f"{idx}. {class_name}")
-
-            try:
-                class_choice = int(input("\nSelect a class by number to execute its methods: ")) - 1
-                selected_class_name = list(module_instances.keys())[class_choice]
-                instance = module_instances[selected_class_name]
-                logger.debug(f"Selected class instance: {selected_class_name}")
-            except (ValueError, IndexError):
-                print("Invalid selection. Please select a valid class number.")
-                continue
-
-            # Display and select methods for execution
-            methods = [m for m in dir(instance) if not m.startswith('_') and callable(getattr(instance, m))]
-            for idx, method_name in enumerate(methods, 1):
-                print(f"{idx}. {method_name}")
-            try:
-                method_choice = int(input("\nSelect a method by number to execute: ")) - 1
-                selected_method = methods[method_choice]
-                method_to_call = getattr(instance, selected_method)
-            except (ValueError, IndexError, AttributeError) as e:
-                print(f"Error selecting or executing method: {e}")
-                logger.error(f"Error selecting method: {e}")
-                continue
-
-            # Collect arguments and execute the method
-            args = []
-            kwargs = {}
-            print("Enter arguments for the function (or press Enter to skip):")
-            sig = inspect.signature(method_to_call)
-            for param in sig.parameters.values():
-                if param.name == "self":
-                    continue
-                if param.default == param.empty:
-                    args.append(input(f"Enter argument for '{param.name}': "))
-                else:
-                    default_val = param.default
-                    kwargs[param.name] = input(f"Enter argument for '{param.name}' (default={default_val}): ") or default_val
-
-            try:
-                result = method_to_call(*args, **kwargs)
-                if result is not None:
-                    print(f"\nResult: {result}")
-                else:
-                    print("\nResult: No output returned.")
-                logger.info(f"Executed {selected_class_name}.{selected_method} with result: {result}")
-            except Exception as e:
-                print(f"Error executing the function: {e}")
-                logger.error(f"Error executing {selected_class_name}.{selected_method}: {e}")
-
-        elif choice == "4":
+            # Help menu for modules
             print("\n=== Help Documentation ===")
             modules = list(loader.modules_dict['app']['module'].keys())
             for idx, module_name in enumerate(modules, 1):
@@ -215,7 +176,7 @@ def main():
             except (ValueError, IndexError):
                 print("Invalid selection. Please select a valid module number.")
 
-        elif choice == "5":
+        elif choice == "4":
             print("Exiting Module Loader Interactive Environment.")
             break
 

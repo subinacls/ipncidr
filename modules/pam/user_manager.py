@@ -1,4 +1,4 @@
-import os
+ximport os
 import subprocess
 import crypt
 from datetime import datetime, timedelta

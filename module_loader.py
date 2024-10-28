@@ -130,31 +130,47 @@ class ModuleLoader:
             binary_checker = BinaryChecker(required_binaries)
             binary_checker.check_binaries()
 
+
     def _add_module_to_dict(self, module, module_key):
-        """Organize classes and functions from a module into the modules dictionary."""
+        """Organize instances of classes and functions from a module into the modules dictionary."""
         module_dict = {}
         for name, obj in inspect.getmembers(module):
             if inspect.isclass(obj):
-                # Only include classes that are defined within the module (not imported)
+                # Only include classes defined within the module (not imported)
                 if obj.__module__ == module.__name__:
-                    class_methods = {
-                        method_name: {
-                            'function': getattr(obj, method_name),
-                            'help': inspect.getdoc(getattr(obj, method_name))
-                        }
-                        for method_name, method_obj in inspect.getmembers(obj, inspect.isfunction)
-                    }
-                    module_dict[name] = {
-                        'class_ref': obj,
-                        'methods': class_methods,
-                        'help': inspect.getdoc(obj)
-                    }
+                    # Check if __init__ has required parameters beyond 'self'
+                    init_sig = inspect.signature(obj.__init__)
+                    has_required_params = any(
+                        param.default == param.empty and param.name != 'self'
+                        for param in init_sig.parameters.values()
+                    )
+
+                    if not has_required_params:
+                        try:
+                            instance = obj()  # Instantiate class without required positional args
+                            class_methods = {
+                                method_name: {
+                                    'function': getattr(instance, method_name),
+                                    'help': inspect.getdoc(getattr(instance, method_name))
+                                }
+                                for method_name, method_obj in inspect.getmembers(obj, inspect.isfunction)
+                            }
+                            module_dict[name] = {
+                                'instance': instance,  # Store the instance directly
+                                'methods': class_methods,
+                                'help': inspect.getdoc(obj)
+                            }
+                        except Exception as e:
+                            logger.error(f"Failed to instantiate class {name} in module {module_key}: {e}")
+                    else:
+                        logger.warning(f"Skipped instantiation of {name} in {module_key}: requires arguments.")
             elif inspect.isfunction(obj):
                 module_dict[name] = {
                     'function': obj,
                     'help': inspect.getdoc(obj)
                 }
         self.modules_dict['app']['module'][module_key] = module_dict
+
 
     def display_help(self, path):
         """Display help documentation for a specified module or function."""
