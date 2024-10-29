@@ -7,6 +7,10 @@ error = True
 warn = True
 
 
+# binary_locations for check_binary
+binary_locations = {}
+
+
 import json
 import os
 
@@ -20,6 +24,70 @@ SETTINGS_FILE = 'config.json'
 default_settings = {
     'modules': {}
 }
+
+
+def load_data(key):
+    """
+    Loads data for the specified key within the 'modules' section of the JSON settings file.
+    
+    Parameters:
+    ----------
+    key : str
+        The key for the data to retrieve under 'modules'.
+    
+    Returns:
+    -------
+    data : dict or None
+        The data corresponding to the key, or None if not found.
+    """
+    if not os.path.exists(SETTINGS_FILE):
+        # If the file doesn't exist, initialize it with default settings
+        save_default_settings()
+
+    with open(SETTINGS_FILE, "r") as f:
+        data = json.load(f)
+    return data.get("modules", {}).get(key)
+
+def save_data(key, value):
+    """
+    Saves data for the specified key to the 'modules' section of the JSON settings file.
+    
+    Parameters:
+    ----------
+    key : str
+        The key for the data to store under 'modules'.
+    value : dict
+        The data to store under the specified key within 'modules'.
+    """
+    if not os.path.exists(SETTINGS_FILE):
+        save_default_settings()
+
+    with open(SETTINGS_FILE, "r") as f:
+        data = json.load(f)
+
+    # Ensure 'modules' structure exists, then update the key-value pair
+    data.setdefault("modules", {})[key] = value
+
+    with open(SETTINGS_FILE, "w") as f:
+        json.dump(data, f, indent=4)
+
+def save_default_settings():
+    """
+    Saves the default settings to the JSON settings file if it does not exist.
+    """
+    with open(SETTINGS_FILE, "w") as f:
+        json.dump(default_settings, f, indent=4)
+
+
+
+
+
+
+
+
+
+
+
 
 # Load existing settings or create new default settings
 def load_settings():
