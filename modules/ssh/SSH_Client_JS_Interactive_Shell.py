@@ -199,6 +199,8 @@ if __name__ == "__main__":
         password="target_password",
         port=22,
         # Add more Jump Servers to the chain as needed
+        # You can also use the path to your key in place of the passwd
+        # ("5.6.7.8", "keyeduser","~/path/to/key.pem")
         jump_servers=[
             ("4.3.2.1", "myuserA", "BLAW!", 22),
             ("1.2.3.4", "myuserB", "BLAW!", 22)
