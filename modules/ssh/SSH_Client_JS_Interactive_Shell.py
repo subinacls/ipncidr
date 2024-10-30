@@ -5,7 +5,7 @@ import re
 
 logging.basicConfig(level=logging.INFO)
 
-class CISBenchmarkChecker:
+class SSH_Connection_Handler:
     def __init__(self, hostname, username, password=None, pkey_path=None, port=22, jump_servers=None):
         self.hostname = hostname
         self.username = username
@@ -193,7 +193,7 @@ class CISBenchmarkChecker:
 
 # Example usage
 if __name__ == "__main__":
-    checker = CISBenchmarkChecker(
+    checker = SSH_Connection_Handler(
         hostname="target_ip(4|6) addresses supported",
         username="target_username",
         password="target_password",
