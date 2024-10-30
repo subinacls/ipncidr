@@ -194,6 +194,7 @@ class SSH_Connection_Handler:
 # Example usage
 if __name__ == "__main__":
     checker = SSH_Connection_Handler(
+        # Supports IPv4 and 6 addresses as well as FQDN/DNS
         hostname="target_ip(4|6) addresses supported",
         username="target_username",
         password="target_password",
